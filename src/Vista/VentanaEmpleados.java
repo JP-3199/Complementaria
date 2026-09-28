@@ -2,6 +2,7 @@ package Vista;
 import Controlador.EmpleadoControlador;
 import Modelo.EmpleadoAdministrativo;
 import Modelo.EmpleadoBase;
+import  Modelo.EmpleadoComercial;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -13,6 +14,7 @@ public class VentanaEmpleados extends JFrame {
     private final JTextField txtNombre = new JTextField();
     private final JTextField txtSalario = new JTextField();
     private final JTextField txtBonificacion = new JTextField();
+    private final JTextField txtPorcentaje = new JTextField();
     private final JComboBox<String> cmbTipo =
             new JComboBox<>(EmpleadoControlador.TIPOS_EMPLEADO);
 
@@ -49,7 +51,7 @@ public class VentanaEmpleados extends JFrame {
 
 
     private JPanel construirFormulario() {
-        JPanel campos = new JPanel(new GridLayout(5, 2, 8, 8));
+        JPanel campos = new JPanel(new GridLayout(6, 2, 8, 8));
         campos.add(new JLabel("Cédula:"));
         campos.add(txtCedula);
         campos.add(new JLabel("Nombre completo:"));
@@ -58,9 +60,12 @@ public class VentanaEmpleados extends JFrame {
         campos.add(txtSalario);
         campos.add(new JLabel("Tipo de empleado:"));
         campos.add(cmbTipo);
-        campos.add(new JLabel("Bonificación (solo administrativos):"));
+        campos.add(new JLabel("Bonificación (administrativos y comerciales):"));
         campos.add(txtBonificacion);
+        campos.add(new JLabel("Porcentaje bonificación (solo comerciales):"));
+        campos.add(txtPorcentaje);
         txtBonificacion.setEnabled(false); // arranca en "Operativo"
+        txtPorcentaje.setEnabled(false);
 // Array de botones + ciclo for-each para agregarlos todos al panel
         JPanel botones = new JPanel(new FlowLayout());
         JButton[] listaBotones = {btnAgregar, btnBuscar, btnActualizar,
@@ -120,18 +125,27 @@ public class VentanaEmpleados extends JFrame {
     // ======================= EVENTOS =======================
     private void conectarEventos() {
         cmbTipo.addActionListener(e -> {
-            boolean esAdministrativo = tipoSeleccionado().equals("Administrativo");
-            txtBonificacion.setEnabled(esAdministrativo);
-            if (!esAdministrativo) {
+            String tipo = tipoSeleccionado();
+            boolean conBono = tipo.equals("Administrativo") || tipo.equals("Comercial");
+            boolean esComercial = tipo.equals("Comercial");
+
+            txtBonificacion.setEnabled(conBono);
+            txtPorcentaje.setEnabled(esComercial);
+
+            if (!conBono) {
                 txtBonificacion.setText("");
+            }
+            if (!esComercial) {
+                txtBonificacion.setText("");
+                
             }
         });
         btnAgregar.addActionListener(e -> mostrarResultado(controlador.agregarEmpleado(
                 texto(txtCedula), texto(txtNombre), texto(txtSalario),
-                tipoSeleccionado(), texto(txtBonificacion))));
+                tipoSeleccionado(), texto(txtBonificacion), texto(txtPorcentaje))));
         btnActualizar.addActionListener(e -> mostrarResultado(controlador.actualizarEmpleado(
                 texto(txtCedula), texto(txtNombre), texto(txtSalario),
-                tipoSeleccionado(), texto(txtBonificacion))));
+                tipoSeleccionado(), texto(txtBonificacion), texto(txtPorcentaje))));
         btnBuscar.addActionListener(e -> buscar());
         btnEliminar.addActionListener(e -> eliminar());
         btnLimpiar.addActionListener(e -> limpiarFormulario());
@@ -159,6 +173,10 @@ public class VentanaEmpleados extends JFrame {
         if (empleado instanceof EmpleadoAdministrativo) {
             EmpleadoAdministrativo administrativo = (EmpleadoAdministrativo) empleado;
             txtBonificacion.setText(String.format("%.0f", administrativo.getBonificacion()));
+        } else if (empleado instanceof EmpleadoComercial){
+            EmpleadoComercial comercial = (EmpleadoComercial) empleado;
+            txtBonificacion.setText(String.format("%.0f", comercial.getBonificacion()));
+            txtPorcentaje.setText(String.valueOf(comercial.getPorcentajeBonificacion()));
         }
     }
     private void eliminar() {
@@ -176,6 +194,7 @@ public class VentanaEmpleados extends JFrame {
         txtNombre.setText("");
         txtSalario.setText("");
         txtBonificacion.setText("");
+        txtPorcentaje.setText("");
         cmbTipo.setSelectedIndex(0);
         txtCedula.requestFocus();
     }
